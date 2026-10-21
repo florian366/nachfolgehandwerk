@@ -1,0 +1,171 @@
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+
+if (window.location.hash) {
+  history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+}
+
+const scrollToTop = () => {
+  window.scrollTo(0, 0);
+  requestAnimationFrame(() => window.scrollTo(0, 0));
+};
+
+scrollToTop();
+window.addEventListener('load', scrollToTop);
+window.addEventListener('pageshow', scrollToTop);
+
+const menuToggle = document.querySelector('.menu-toggle');
+const nav = document.querySelector('.main-nav');
+const navDropdown = document.querySelector('.nav-dropdown');
+const navDropdownToggle = document.querySelector('.nav-dropdown-toggle');
+
+const saleNetworkCopy = document.querySelector('.sale-page .network-grid > div');
+if (saleNetworkCopy) {
+  const paragraphs = saleNetworkCopy.querySelectorAll('p');
+  if (paragraphs.length >= 3) {
+    paragraphs[0].innerHTML = 'Wir verfügen über ein Netzwerk mit <strong>über 2.000 Kontakten im Handwerk.</strong>';
+    paragraphs[1].remove();
+    paragraphs[1].innerHTML = '<strong>Entscheidend ist nicht, möglichst viele Kontakte weiterzugeben, sondern passende Interessenten zu identifizieren, gezielte Kontakte herzustellen und schnell die bestmögliche Nachfolgelösung zu schaffen.</strong>';
+  }
+}
+
+menuToggle?.addEventListener('click', () => {
+  const isOpen = nav.classList.toggle('open');
+  menuToggle.setAttribute('aria-expanded', String(isOpen));
+});
+
+navDropdownToggle?.addEventListener('click', () => {
+  const isOpen = navDropdown.classList.toggle('open');
+  navDropdownToggle.setAttribute('aria-expanded', String(isOpen));
+});
+
+document.querySelectorAll('.main-nav a').forEach((link) => {
+  link.addEventListener('click', () => {
+    nav.classList.remove('open');
+    menuToggle?.setAttribute('aria-expanded', 'false');
+    navDropdown?.classList.remove('open');
+    navDropdownToggle?.setAttribute('aria-expanded', 'false');
+  });
+});
+
+document.addEventListener('click', (event) => {
+  if (navDropdown && !navDropdown.contains(event.target)) {
+    navDropdown.classList.remove('open');
+    navDropdownToggle?.setAttribute('aria-expanded', 'false');
+  }
+});
+
+document.querySelectorAll('.hero-video[data-video-id]').forEach((video) => {
+  const loadVideo = () => {
+    const videoId = video.dataset.videoId;
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+    frame.title = video.dataset.videoTitle || 'Video zum gesamten Ablauf das Unternehmensnachfolge';
+    frame.allow = 'autoplay; encrypted-media; picture-in-picture';
+    frame.allowFullscreen = true;
+    video.replaceChildren(frame);
+    video.classList.add('is-playing');
+    video.removeAttribute('role');
+    video.removeAttribute('tabindex');
+    video.removeAttribute('aria-label');
+  };
+
+  video.addEventListener('click', loadVideo);
+  video.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      loadVideo();
+    }
+  });
+});
+
+document.querySelectorAll('#request-form, #tip-form').forEach((form) => {
+  form.action = form.id === 'tip-form'
+    ? 'https://formspree.io/f/xdekpwjo'
+    : 'https://formspree.io/f/xvkgwveg';
+  form.method = 'POST';
+
+  const subject = document.createElement('input');
+  subject.type = 'hidden';
+  subject.name = '_subject';
+  subject.value = form.id === 'tip-form'
+    ? 'Neuer Tipp über NachfolgeHandwerk.com'
+    : 'Neue Anfrage über NachfolgeHandwerk.com';
+  form.prepend(subject);
+
+  if (form.id === 'tip-form') {
+    form.addEventListener('submit', (event) => {
+      if (typeof window.fbq !== 'function') return;
+      event.preventDefault();
+      window.fbq('track', 'Lead', {
+        value: 10.000,
+        currency: 'EUR',
+      });
+      // Give the Pixel request a moment before Formspree navigates away.
+      window.setTimeout(() => form.submit(), 300);
+    });
+  }
+});
+
+const consentKey = 'nh_cookie_consent';
+const analyticsId = 'G-E4S53DLB36';
+
+const loadGoogleAnalytics = () => {
+  if (window.__nhGoogleAnalyticsLoaded) return;
+  window.__nhGoogleAnalyticsLoaded = true;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag(){window.dataLayer.push(arguments);};
+  window.gtag('js', new Date());
+  window.gtag('config', analyticsId);
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${analyticsId}`;
+  document.head.appendChild(script);
+};
+
+const loadMetaPixel = () => {
+  if (!document.body.classList.contains('referral-page')) return;
+  window.__nhLoadMetaPixel?.();
+};
+
+const loadOptionalTracking = () => {
+  loadGoogleAnalytics();
+  loadMetaPixel();
+};
+
+const showCookieSettings = () => {
+  const existing = document.querySelector('.cookie-consent');
+  if (existing) {
+    existing.hidden = false;
+    return;
+  }
+
+  const banner = document.createElement('aside');
+  banner.className = 'cookie-consent';
+  banner.setAttribute('aria-labelledby', 'cookie-consent-title');
+  banner.innerHTML = `<div><strong id="cookie-consent-title">Ihre Privatsphäre</strong><p>Wir verwenden optionale Cookies für Google Analytics und auf der Tippgeber-Seite das Meta Pixel. Diese helfen uns, die Website zu verbessern. Details finden Sie in der <a href="/datenschutz.html">Datenschutzerklärung</a>.</p></div><div class="cookie-consent-actions"><button type="button" class="cookie-reject">Nur notwendige</button><button type="button" class="button button-dark cookie-accept">Alle akzeptieren</button></div>`;
+  document.body.appendChild(banner);
+
+  const saveConsent = (value) => {
+    localStorage.setItem(consentKey, value);
+    banner.hidden = true;
+    if (value === 'accepted') loadOptionalTracking();
+  };
+  banner.querySelector('.cookie-accept').addEventListener('click', () => saveConsent('accepted'));
+  banner.querySelector('.cookie-reject').addEventListener('click', () => saveConsent('rejected'));
+};
+
+const savedConsent = localStorage.getItem(consentKey);
+if (savedConsent === 'accepted') {
+  loadOptionalTracking();
+} else if (!savedConsent) {
+  showCookieSettings();
+}
+
+document.querySelectorAll('[data-cookie-settings]').forEach((button) => {
+  button.addEventListener('click', () => {
+    localStorage.removeItem(consentKey);
+    showCookieSettings();
+  });
+});
