@@ -395,3 +395,12 @@ body:not(.home-page) .referral-hero-form textarea{background:#f8fbff}
   background:#104574;
   color:#fff;
 }
+
+.logo-image{
+  width:25px;
+  height:25px;
+  flex:0 0 25px;
+  display:block;
+  border-radius:50%;
+  object-fit:cover;
+}
