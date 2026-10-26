@@ -109,7 +109,7 @@ document.querySelectorAll('#request-form, #tip-form').forEach((form) => {
 });
 
 const consentKey = 'nh_cookie_consent';
-const analyticsId = 'G-E4S53DLB36';
+const analyticsId = 'G-M6HXWWY0TX';
 
 const loadGoogleAnalytics = () => {
   if (window.__nhGoogleAnalyticsLoaded) return;
